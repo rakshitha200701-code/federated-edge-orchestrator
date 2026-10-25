@@ -1,0 +1,77 @@
+
+services:
+  edge-chennai:
+    build: ./edge_app
+    container_name: federated-edge-chennai
+    environment:
+      NODE_NAME: chennai
+      LATENCY_DELAY_MS: "10"
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+
+  edge-bangalore:
+    build: ./edge_app
+    container_name: federated-edge-bangalore
+    environment:
+      NODE_NAME: bangalore
+      LATENCY_DELAY_MS: "25"
+    ports:
+      - "8002:8000"
+    restart: unless-stopped
+
+  edge-hyderabad:
+    build: ./edge_app
+    container_name: federated-edge-hyderabad
+    environment:
+      NODE_NAME: hyderabad
+      LATENCY_DELAY_MS: "35"
+    ports:
+      - "8003:8000"
+    restart: unless-stopped
+
+  orchestrator:
+    build: ./orchestrator
+    container_name: edge-orchestrator
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+    ports:
+      - "5000:5000"
+    depends_on:
+      - edge-chennai
+      - edge-bangalore
+      - edge-hyderabad
+      - prometheus
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: federated-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+    restart: unless-stopped

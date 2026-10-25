@@ -1,6 +1,15 @@
-FROM python:3.9-slim
+
+FROM python:3.11-slim
+
 WORKDIR /app
-RUN pip install --no-cache-dir Flask==3.0.2 requests==2.31.0
+
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    requests
+
 COPY main.py .
+
 EXPOSE 5000
-CMD ["python", "main.py"]
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]
